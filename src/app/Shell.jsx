@@ -118,7 +118,7 @@ export default function Shell() {
         ))}
       </nav>
 
-      <div className={`z-session${warn !== null ? ' show' : ''}`} data-testid="session-banner" role="alert" aria-hidden={warn === null}>
+      <div className={`z-session${warn !== null ? ' show' : ''}`} data-testid="session-banner" role="alert">
         <Icon name="clock" size={18} />
         <span>Session expires in <strong data-testid="session-countdown">{warn ?? WARN_SECONDS}s</strong></span>
         <Button size="sm" onClick={() => restart.current()} data-testid="stay-logged-in">Stay logged in</Button>

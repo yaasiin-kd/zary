@@ -108,7 +108,7 @@ export function Badge({ tone, icon, children, ...rest }) {
 export function Progress({ value, tone = 'primary', large, label }) {
   const v = Math.max(0, Math.min(100, value));
   return (
-    <div className={cx('z-progress', large && 'z-progress-lg')} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(v)} aria-label={label}>
+    <div className={cx('z-progress', large && 'z-progress-lg')} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.floor(v)} aria-label={label}>
       <div className={cx('z-progress-fill', `tone-${tone}`)} style={{ width: `${v}%` }} />
     </div>
   );

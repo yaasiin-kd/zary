@@ -100,4 +100,52 @@ Every push to `main` deploys automatically. The redirect rule in `netlify.toml` 
 
 ## Testing
 
-Every interactive element has a `data-testid` attribute, ready for end-to-end tests with Playwright. For example `email-input`, `login-button`, `otp-digit-1` to `otp-digit-6`, `otp-display`, `add-expense-button`, `pagination-next`, `transfer-button` and `logout-button`.
+End-to-end tests use [Playwright](https://playwright.dev) and live in `tests/e2e`.
+
+```
+tests/e2e/
+├── fixtures.js            `app` and `signedIn` fixtures
+├── support/app.js         Page object with the actions a user takes (signIn, addExpense, transfer...)
+├── routing.spec.js        Redirects and protected pages
+├── landing.spec.js        Landing page links, FAQ, WebGL and reduced-motion fallbacks
+├── auth-signin.spec.js    Sign in
+├── auth-verify.spec.js    Six-digit code, paste, resend and expiry
+├── auth-signup.spec.js    Sign up and onboarding
+├── navigation.spec.js     Sidebar, top bar and sign out
+├── dashboard.spec.js      Overview figures, activity and budget health
+├── expenses.spec.js       Add, delete, undo, validation, search, filters, pagination, CSV
+├── budget.spec.js         Status thresholds, editing limits, summary
+├── transfer.spec.js       Both directions, validation, quick amounts, history
+├── settings.spec.js       Profile, password, preferences, account actions
+├── session.spec.js        Idle timeout and warning
+├── responsive.spec.js     Phone layout (runs in the mobile project)
+└── accessibility.spec.js  axe WCAG 2.1 AA scans and a keyboard-only flow
+```
+
+Tests tagged `@smoke` form the quick suite. Timers (code expiry, undo, session timeout) use Playwright's clock control, so nothing waits in real time.
+
+```bash
+npx playwright install        # first time only, downloads the browsers
+npm run test:e2e              # everything
+npm run test:e2e:smoke        # smoke suite only
+npm run test:e2e:ui           # interactive mode
+npm run test:e2e:report       # open the last HTML report
+```
+
+The tests build the app and start `vite preview` on port 4173 automatically.
+
+### Projects
+
+| Project | Runs |
+| --- | --- |
+| `chromium` | Full suite on desktop Chrome |
+| `mobile` | Phone layout checks on a Pixel 7 viewport |
+| `firefox`, `webkit` | Smoke suite only |
+
+### Continuous integration
+
+`.github/workflows/e2e.yml` runs on every pull request to `main`, every push to `main`, and on demand. It runs two jobs in parallel: the full suite in Chromium (desktop and phone), and the smoke suite in Firefox and WebKit. The HTML report is attached to each run as an artifact. To block merging when tests fail, make these checks required in the branch protection rules for `main`.
+
+### Writing tests
+
+Accounts and data live in memory, so `page.goto()` reloads the app and resets everything except the theme. When a test needs earlier data, move between screens with in-app links. Every interactive element has a `data-testid`; prefer `getByTestId` or `getByRole` over CSS selectors.

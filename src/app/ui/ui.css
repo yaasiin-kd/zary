@@ -329,8 +329,8 @@
 .z-toast-icon{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;background:#3fa874;color:#ffffff}
 .z-toast-undo{margin-left:auto;padding:6px 10px;border:0;border-radius:8px;background:color-mix(in srgb,var(--z-bg) 12%,transparent);color:inherit;font:700 13px 'Instrument Sans',sans-serif;cursor:pointer}
 .z-toast-undo:hover{background:color-mix(in srgb,var(--z-bg) 20%,transparent)}
-.z-session{position:fixed;top:16px;left:50%;z-index:210;display:flex;align-items:center;gap:12px;padding:10px 10px 10px 16px;border:1px solid var(--z-gold);border-radius:12px;background:var(--z-surface);box-shadow:var(--z-shadow);font-size:14px;white-space:nowrap;transform:translate(-50%,-160%);transition:transform .3s cubic-bezier(.2,.7,.2,1)}
-.z-session.show{transform:translate(-50%,0)}
+.z-session{position:fixed;top:16px;left:50%;z-index:210;display:flex;align-items:center;gap:12px;padding:10px 10px 10px 16px;border:1px solid var(--z-gold);border-radius:12px;background:var(--z-surface);box-shadow:var(--z-shadow);font-size:14px;white-space:nowrap;transform:translate(-50%,-160%);visibility:hidden;transition:transform .3s cubic-bezier(.2,.7,.2,1),visibility 0s linear .3s}
+.z-session.show{transform:translate(-50%,0);visibility:visible;transition:transform .3s cubic-bezier(.2,.7,.2,1)}
 .z-session strong{color:var(--z-gold)}
 .z-overlay{position:fixed;inset:0;z-index:300;display:grid;place-items:center;padding:20px;background:rgba(5,10,20,.55);backdrop-filter:blur(3px);animation:z-fade .15s ease}
 .z-dialog{width:100%;max-width:420px;padding:24px;border:1px solid var(--z-line);border-radius:18px;background:var(--z-surface);box-shadow:0 30px 60px -20px rgba(0,0,0,.55);animation:z-pop .18s cubic-bezier(.2,.7,.2,1)}
@@ -344,3 +344,6 @@
 .z-page-enter{animation:z-in .25s ease}
 @media (max-width:860px){.z-toast{left:16px;right:16px;bottom:84px}}
 @media (prefers-reduced-motion:reduce){.za *,.za *::before,.za *::after{animation-duration:0s!important;transition-duration:0s!important}}
+
+/* Links inside sentences need more than colour to stand out */
+.za .auth-switch a{text-decoration:underline;text-underline-offset:2px}

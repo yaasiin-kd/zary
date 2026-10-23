@@ -12,8 +12,10 @@ function BudgetCard({ b, onSave }) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(String(b.limit));
   const [error, setError] = useState('');
-  const pct = Math.round((b.spent / b.limit) * 100);
-  const s = status(pct);
+  // Status uses the exact ratio; the label rounds down so 79,999 of 80,000 reads 99%, not 100%.
+  const ratio = (b.spent / b.limit) * 100;
+  const pct = Math.floor(ratio);
+  const s = status(ratio);
   const key = b.cat.toLowerCase();
   const left = b.limit - b.spent;
 
@@ -36,7 +38,7 @@ function BudgetCard({ b, onSave }) {
         <span className="z-budget-spent">{fmt(b.spent)} <small className="z-muted" style={{ fontSize: 13, fontWeight: 500 }}>XOF</small></span>
         <span className="z-muted" style={{ fontSize: 13 }}>of {money(b.limit)}</span>
       </div>
-      <Progress value={pct} tone={s.tone} label={`${b.cat} budget used`} />
+      <Progress value={ratio} tone={s.tone} label={`${b.cat} budget used`} />
       {editing ? (
         <form className="z-budget-edit" onSubmit={save} noValidate>
           <Field htmlFor={`limit-${key}`} error={error}>
@@ -49,7 +51,7 @@ function BudgetCard({ b, onSave }) {
       ) : (
         <div className="z-budget-foot">
           <span data-testid={`budget-pct-${key}`}>{pct}% used</span>
-          <span>{left >= 0 ? `${money(left)} left` : `${money(-left)} over`}</span>
+          <span data-testid={`budget-left-${key}`}>{left >= 0 ? `${money(left)} left` : `${money(-left)} over`}</span>
           <Button variant="ghost" size="sm" icon="edit" onClick={() => setEditing(true)} data-testid={`budget-edit-${key}`}>Edit</Button>
         </div>
       )}
@@ -76,9 +78,9 @@ export default function Budget() {
             <div className="z-overview-amount" data-testid="budget-total">{money(totalSpent)} <small>of {money(totalLimit)}</small></div>
             <Progress large value={totalPct} tone={totalPct >= 100 ? 'red' : totalPct >= 75 ? 'gold' : 'primary'} label="Total budget used" />
           </div>
-          <div className="z-mini"><span>Remaining</span><strong>{fmt(Math.max(0, totalLimit - totalSpent))}</strong></div>
-          <div className="z-mini"><span>Close to limit</span><strong>{close}</strong></div>
-          <div className="z-mini"><span>Over budget</span><strong className={over ? 'z-neg' : undefined}>{over}</strong></div>
+          <div className="z-mini"><span>Remaining</span><strong data-testid="budget-remaining">{fmt(Math.max(0, totalLimit - totalSpent))}</strong></div>
+          <div className="z-mini"><span>Close to limit</span><strong data-testid="budget-close-count">{close}</strong></div>
+          <div className="z-mini"><span>Over budget</span><strong data-testid="budget-over-count" className={over ? 'z-neg' : undefined}>{over}</strong></div>
         </div>
       </Card>
       <div className="z-budget-grid" data-testid="budget-grid">

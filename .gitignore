@@ -5,3 +5,7 @@ dist/
 Thumbs.db
 *.log
 .env*
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/

@@ -11,22 +11,24 @@ export default function Verify() {
   const navigate = useNavigate();
   const [code, setCode] = useState(newCode);
   const [digits, setDigits] = useState(EMPTY);
-  const [secs, setSecs] = useState(CODE_SECONDS);
+  // The countdown is derived from a fixed expiry time, so it stays accurate in background tabs and under test clocks.
+  const [expiresAt, setExpiresAt] = useState(() => Date.now() + CODE_SECONDS * 1000);
+  const [now, setNow] = useState(Date.now);
   const [error, setError] = useState('');
   const refs = useRef([]);
+  const secs = Math.max(0, Math.ceil((expiresAt - now) / 1000));
 
   useEffect(() => {
-    if (secs <= 0) return undefined;
-    const t = setTimeout(() => setSecs((s) => s - 1), 1000);
-    return () => clearTimeout(t);
-  }, [secs]);
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => { refs.current[0] && refs.current[0].focus(); }, [code]);
 
   function verify(ds) {
     const entered = ds.join('');
     if (entered.length < 6) { setError('Please enter all 6 digits.'); return; }
-    if (secs <= 0) { setError('This code has expired. Request a new one.'); return; }
+    if (Date.now() >= expiresAt) { setError('This code has expired. Request a new one.'); return; }
     if (entered !== code) { setError('Incorrect code. Try again.'); return; }
     if (pending.isNew) { navigate('/app/welcome'); return; }
     finishAuth();
@@ -66,7 +68,8 @@ export default function Verify() {
   function resend() {
     setCode(newCode());
     setDigits(EMPTY);
-    setSecs(CODE_SECONDS);
+    setExpiresAt(Date.now() + CODE_SECONDS * 1000);
+    setNow(Date.now());
     setError('');
   }
 
