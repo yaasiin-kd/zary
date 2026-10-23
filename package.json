@@ -10,6 +10,9 @@
     "test:e2e": "playwright test",
     "test:e2e:smoke": "playwright test --grep @smoke",
     "test:e2e:ui": "playwright test --ui",
+    "test:e2e:video": "playwright test -c playwright.video.config.js",
+    "test:e2e:trace": "playwright test --trace on",
+    "test:e2e:training": "playwright test -c playwright.training.config.js",
     "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
