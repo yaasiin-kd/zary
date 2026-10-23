@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import Logo from '../components/Logo.jsx';
+import '../styles/landing.css';
 import Icon from '../components/icons.jsx';
 import { CTA_RINGS, CTA_RINGS_INNER, CTA_WAVES, NOTE_LINES } from './guilloche.js';
 import { mountHeroScene } from './heroScene.js';

@@ -1,156 +1,186 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { savingsRate, useZary } from '../store.jsx';
-import PageHead from './PageHead.jsx';
+import { Avatar, Badge, Button, Card, ConfirmDialog, Field, PageHeader, SelectInput, SettingRow, Switch, Tabs, TextInput } from '../ui/index.jsx';
 
 const COUNTRIES = ['Togo', "Côte d'Ivoire", 'Sénégal', 'Mali', 'Burkina Faso', 'Niger', 'Bénin', 'Guinée', 'Other'];
+const TABS = [
+  { id: 'profile', label: 'Profile' },
+  { id: 'security', label: 'Security' },
+  { id: 'preferences', label: 'Preferences' },
+  { id: 'account', label: 'Account' },
+];
+const STRENGTH = ['Too short', 'Weak', 'Fair', 'Good', 'Strong'];
 
-function Toggle({ checked, onChange, testid, label }) {
+function strength(pw) {
+  if (pw.length < 6) return 0;
+  let s = 1;
+  if (pw.length >= 10) s++;
+  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) s++;
+  if (/\d/.test(pw) && /[^A-Za-z0-9]/.test(pw)) s++;
+  return Math.min(4, s);
+}
+
+function ProfileForm() {
+  const { user, saveProfile } = useZary();
+  const split = (n) => { const p = n.split(' '); return { fname: p[0] || '', lname: p.slice(1).join(' ') }; };
+  const initial = { ...split(user.name), email: user.email };
+  const [form, setForm] = useState({ ...initial, phone: '', country: 'Togo' });
+  const [error, setError] = useState('');
+  const dirty = form.fname !== initial.fname || form.lname !== initial.lname || form.email !== initial.email;
+  const set = (k) => (e) => { setForm({ ...form, [k]: e.target.value }); setError(''); };
+
+  function submit(e) {
+    e.preventDefault();
+    setError(saveProfile(form.fname.trim(), form.lname.trim(), form.email.trim()) || '');
+  }
+
   return (
-    <label className="toggle">
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} data-testid={testid} aria-label={label} />
-      <div className="toggle-track" />
-      <div className="toggle-thumb" />
-    </label>
+    <Card title="Personal information" subtitle="This is how you appear in Zary">
+      <form className="z-form" onSubmit={submit} noValidate>
+        <div className="z-form-row">
+          <Field label="First name" htmlFor="p-fname"><TextInput id="p-fname" autoComplete="given-name" value={form.fname} onChange={set('fname')} invalid={!!error && !form.fname.trim()} data-testid="profile-firstname" /></Field>
+          <Field label="Last name" optional htmlFor="p-lname"><TextInput id="p-lname" autoComplete="family-name" value={form.lname} onChange={set('lname')} data-testid="profile-lastname" /></Field>
+        </div>
+        <Field label="Email address" htmlFor="p-email"><TextInput id="p-email" type="email" autoComplete="email" value={form.email} onChange={set('email')} invalid={!!error && !form.email.trim()} data-testid="profile-email" /></Field>
+        <div className="z-form-row">
+          <Field label="Phone number" optional htmlFor="p-phone"><TextInput id="p-phone" type="tel" autoComplete="tel" placeholder="+228 90 00 00 00" value={form.phone} onChange={set('phone')} data-testid="profile-phone" /></Field>
+          <Field label="Country" htmlFor="p-country">
+            <SelectInput id="p-country" value={form.country} onChange={set('country')} data-testid="profile-country">{COUNTRIES.map((c) => <option key={c}>{c}</option>)}</SelectInput>
+          </Field>
+        </div>
+        {error && <div className="z-form-alert" role="alert" data-testid="profile-error">{error}</div>}
+        <div className="z-form-actions">
+          <Button variant="ghost" disabled={!dirty} onClick={() => { setForm({ ...form, ...initial }); setError(''); }} data-testid="reset-profile-button">Discard changes</Button>
+          <Button type="submit" disabled={!dirty} data-testid="save-profile-button">Save changes</Button>
+        </div>
+      </form>
+    </Card>
   );
 }
 
-function SettingRow({ label, desc, children }) {
+function SecurityForm() {
+  const { changePassword } = useZary();
+  const [pwd, setPwd] = useState({ cur: '', next: '', confirm: '' });
+  const [error, setError] = useState('');
+  const score = strength(pwd.next);
+  const mismatch = pwd.confirm && pwd.next !== pwd.confirm;
+  const set = (k) => (e) => { setPwd({ ...pwd, [k]: e.target.value }); setError(''); };
+
+  function submit(e) {
+    e.preventDefault();
+    const err = changePassword(pwd.cur, pwd.next, pwd.confirm);
+    setError(err || '');
+    if (!err) setPwd({ cur: '', next: '', confirm: '' });
+  }
+
   return (
-    <div className="setting-row">
-      <div className="setting-info"><div className="setting-label">{label}</div><div className="setting-desc">{desc}</div></div>
-      {children}
+    <Card title="Change password" subtitle="Use at least 6 characters. Longer is stronger.">
+      <form className="z-form" onSubmit={submit} noValidate>
+        <Field label="Current password" htmlFor="p-curpwd"><TextInput id="p-curpwd" type="password" autoComplete="current-password" value={pwd.cur} onChange={set('cur')} data-testid="current-password" /></Field>
+        <Field label="New password" htmlFor="p-newpwd" hint={pwd.next ? `Strength: ${STRENGTH[score]}` : 'At least 6 characters'}>
+          <TextInput id="p-newpwd" type="password" autoComplete="new-password" value={pwd.next} onChange={set('next')} data-testid="new-password" />
+          <div className="z-strength" data-score={pwd.next ? Math.max(1, score) : 0} aria-hidden="true"><span /><span /><span /><span /></div>
+        </Field>
+        <Field label="Confirm new password" htmlFor="p-confpwd" error={mismatch ? 'Passwords do not match yet.' : undefined}>
+          <TextInput id="p-confpwd" type="password" autoComplete="new-password" value={pwd.confirm} onChange={set('confirm')} invalid={!!mismatch} data-testid="confirm-password" />
+        </Field>
+        {error && <div className="z-form-alert" role="alert" data-testid="password-error">{error}</div>}
+        <div className="z-form-actions">
+          <Button type="submit" icon="lock" disabled={!pwd.cur || !pwd.next || !pwd.confirm} data-testid="change-password-button">Update password</Button>
+        </div>
+      </form>
+    </Card>
+  );
+}
+
+function Preferences() {
+  const { theme, setTheme, currency, setCurrency, showToast } = useZary();
+  const [prefs, setPrefs] = useState({ notifications: true, alerts: true, twofa: true });
+  const toggle = (key, label) => (v) => { setPrefs({ ...prefs, [key]: v }); showToast(`${label} ${v ? 'on' : 'off'}`); };
+  return (
+    <div className="z-stack">
+      <Card title="Display">
+        <SettingRow title="Dark mode" description="Easier on the eyes at night">
+          <Switch checked={theme === 'dark'} onChange={(v) => setTheme(v ? 'dark' : 'light')} label="Dark mode" testid="toggle-theme" />
+        </SettingRow>
+        <SettingRow title="Currency" description="Used to display amounts">
+          <SelectInput aria-label="Currency" value={currency} onChange={(e) => { setCurrency(e.target.value); showToast(`Currency set to ${e.target.value}`); }} data-testid="currency-select">
+            <option value="XOF">XOF, CFA franc</option><option value="EUR">EUR, Euro</option><option value="USD">USD, US dollar</option><option value="GBP">GBP, British pound</option>
+          </SelectInput>
+        </SettingRow>
+      </Card>
+      <Card title="Notifications">
+        <SettingRow title="Weekly summary" description="A short email every Monday">
+          <Switch checked={prefs.notifications} onChange={toggle('notifications', 'Weekly summary')} label="Weekly summary" testid="toggle-notifications" />
+        </SettingRow>
+        <SettingRow title="Budget alerts" description="When a category reaches 75% of its limit">
+          <Switch checked={prefs.alerts} onChange={toggle('alerts', 'Budget alerts')} label="Budget alerts" testid="toggle-budget-alerts" />
+        </SettingRow>
+        <SettingRow title="Two-step sign-in" description="Ask for a one-time code when you sign in">
+          <Switch checked={prefs.twofa} onChange={toggle('twofa', 'Two-step sign-in')} label="Two-step sign-in" testid="toggle-2fa" />
+        </SettingRow>
+      </Card>
     </div>
   );
 }
 
-export default function Profile() {
-  const z = useZary();
+function AccountZone() {
+  const { clearExpenses, resetAccount, deleteAccount } = useZary();
   const navigate = useNavigate();
-  const { user, expenses, transfers, theme, currency } = z;
-  const parts = user.name.split(' ');
-  const [fname, setFname] = useState(parts[0] || '');
-  const [lname, setLname] = useState(parts.slice(1).join(' '));
-  const [email, setEmail] = useState(user.email);
-  const [phone, setPhone] = useState('');
-  const [country, setCountry] = useState('Togo');
-  const [profileErr, setProfileErr] = useState('');
-  const [pwd, setPwd] = useState({ cur: '', next: '', confirm: '' });
-  const [pwdErr, setPwdErr] = useState('');
-  const [prefs, setPrefs] = useState({ notifications: true, budget_alerts: true, '2fa': false });
-
-  const initials = user.name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
-
-  function saveProfile(e) {
-    e.preventDefault();
-    setProfileErr(z.saveProfile(fname.trim(), lname.trim(), email.trim()) || '');
-  }
-  function resetProfile() {
-    const p = user.name.split(' ');
-    setFname(p[0] || ''); setLname(p.slice(1).join(' ')); setEmail(user.email); setProfileErr('');
-  }
-  function changePassword(e) {
-    e.preventDefault();
-    const err = z.changePassword(pwd.cur, pwd.next, pwd.confirm);
-    setPwdErr(err || '');
-    if (!err) setPwd({ cur: '', next: '', confirm: '' });
-  }
-  function togglePref(key, val) {
-    setPrefs((p) => ({ ...p, [key]: val }));
-    z.showToast(`${val ? 'Enabled' : 'Disabled'} ${key.replace('_', ' ')}`);
-  }
-  function confirmThen(msg, fn) { if (window.confirm(msg)) fn(); }
-
+  const [confirm, setConfirm] = useState(null);
+  const close = useCallback(() => setConfirm(null), []);
+  const ACTIONS = {
+    clear: { title: 'Clear all expenses?', text: 'Every expense you’ve logged will be deleted. Your balances and transfers stay as they are.', label: 'Clear expenses', run: clearExpenses },
+    reset: { title: 'Reset account data?', text: 'Expenses and transfers are deleted and both balances go back to their starting amounts.', label: 'Reset data', run: resetAccount },
+    delete: { title: 'Delete your account?', text: 'Your account and all its data will be removed. You won’t be able to sign in with it again.', label: 'Delete account', run: () => { deleteAccount(); navigate('/app/login', { replace: true }); } },
+  };
+  const rows = [
+    ['clear', 'Clear all expenses', 'Remove every expense record', 'clear-expenses-button'],
+    ['reset', 'Reset account data', 'Start over with the original balances', 'reset-account-button'],
+    ['delete', 'Delete account', 'Permanently remove your account', 'delete-account-button'],
+  ];
+  const a = confirm && ACTIONS[confirm];
   return (
-    <div className="page on" id="p-profile" data-testid="page-profile">
-      <PageHead title="Profile & Settings" sub="Manage your account and preferences" />
-      <div className="profile-layout">
-        <div>
-          <div className="profile-card">
-            <div className="profile-card-body" style={{ textAlign: 'center', padding: '24px 20px 0' }}>
-              <div className="avatar-lg">{initials}</div>
-              <div className="profile-name-display" data-testid="profile-name-display">{user.name}</div>
-              <div className="profile-email-display">{user.email}</div>
-              <span className="badge b-blue" style={{ marginBottom: 20 }}>Personal account</span>
-            </div>
-            <div className="profile-stat-row">
-              <div className="profile-stat"><div className="profile-stat-val" data-testid="profile-stat-expenses">{expenses.length}</div><div className="profile-stat-lbl">Expenses</div></div>
-              <div className="profile-stat"><div className="profile-stat-val" data-testid="profile-stat-transfers">{transfers.length}</div><div className="profile-stat-lbl">Transfers</div></div>
-              <div className="profile-stat"><div className="profile-stat-val" data-testid="profile-stat-saved">{savingsRate(expenses)}%</div><div className="profile-stat-lbl">Saved</div></div>
-            </div>
+    <Card title="Account" subtitle="These actions can’t be undone">
+      {rows.map(([key, title, desc, testid]) => (
+        <SettingRow key={key} title={title} description={desc}>
+          <Button variant="danger-soft" size="sm" onClick={() => setConfirm(key)} data-testid={testid}>{ACTIONS[key].label}</Button>
+        </SettingRow>
+      ))}
+      <ConfirmDialog open={!!a} title={a?.title} text={a?.text} confirmLabel={a?.label} onCancel={close}
+        onConfirm={() => { const run = a.run; setConfirm(null); run(); }} />
+    </Card>
+  );
+}
+
+export default function Profile() {
+  const { user, expenses, transfers } = useZary();
+  const [tab, setTab] = useState('profile');
+  return (
+    <div data-testid="page-profile">
+      <PageHeader title="Settings" subtitle="Manage your profile, security and preferences." />
+      <div className="z-profile">
+        <section className="z-card">
+          <div className="z-profile-card">
+            <Avatar name={user.name} size="lg" />
+            <div className="z-profile-name" data-testid="profile-name-display">{user.name}</div>
+            <div className="z-profile-email">{user.email}</div>
+            <Badge tone="primary" icon="user">Personal account</Badge>
           </div>
-          <div className="profile-card">
-            <div className="profile-card-head"><h3>Preferences</h3></div>
-            <div className="profile-card-body">
-              <SettingRow label="Currency" desc="Display currency for all amounts">
-                <select className="currency-select" value={currency} onChange={(e) => { z.setCurrency(e.target.value); z.showToast(`Currency set to ${e.target.value}`); }} data-testid="currency-select">
-                  <option value="XOF">XOF</option><option value="EUR">EUR</option><option value="USD">USD</option><option value="GBP">GBP</option>
-                </select>
-              </SettingRow>
-              <SettingRow label="Dark mode" desc="Toggle light / dark appearance">
-                <Toggle checked={theme === 'dark'} onChange={(v) => z.setTheme(v ? 'dark' : 'light')} testid="toggle-theme" label="Dark mode" />
-              </SettingRow>
-              <SettingRow label="Email notifications" desc="Weekly spending summaries">
-                <Toggle checked={prefs.notifications} onChange={(v) => togglePref('notifications', v)} testid="toggle-notifications" label="Email notifications" />
-              </SettingRow>
-              <SettingRow label="Budget alerts" desc="Alert when a category reaches 75%">
-                <Toggle checked={prefs.budget_alerts} onChange={(v) => togglePref('budget_alerts', v)} testid="toggle-budget-alerts" label="Budget alerts" />
-              </SettingRow>
-              <SettingRow label="Two-factor auth" desc="OTP verification on sign in">
-                <Toggle checked={prefs['2fa']} onChange={(v) => togglePref('2fa', v)} testid="toggle-2fa" label="Two-factor auth" />
-              </SettingRow>
-            </div>
+          <div className="z-profile-stats">
+            <div><strong data-testid="profile-stat-expenses">{expenses.length}</strong><span>Expenses</span></div>
+            <div><strong data-testid="profile-stat-transfers">{transfers.length}</strong><span>Transfers</span></div>
+            <div><strong data-testid="profile-stat-saved">{savingsRate(expenses)}%</strong><span>Saved</span></div>
           </div>
-        </div>
-
+        </section>
         <div>
-          <form className="profile-card" style={{ marginBottom: 20 }} onSubmit={saveProfile} noValidate>
-            <div className="profile-card-head"><h3>Personal information</h3></div>
-            <div className="profile-card-body">
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div className="field" style={{ margin: 0 }}><label htmlFor="p-fname">First name</label><input type="text" id="p-fname" value={fname} onChange={(e) => setFname(e.target.value)} data-testid="profile-firstname" /></div>
-                <div className="field" style={{ margin: 0 }}><label htmlFor="p-lname">Last name</label><input type="text" id="p-lname" value={lname} onChange={(e) => setLname(e.target.value)} data-testid="profile-lastname" /></div>
-              </div>
-              <div className="field" style={{ marginTop: 12 }}><label htmlFor="p-email">Email address</label><input type="email" id="p-email" value={email} onChange={(e) => setEmail(e.target.value)} data-testid="profile-email" /></div>
-              <div className="field"><label htmlFor="p-phone">Phone number</label><input type="tel" id="p-phone" placeholder="+228 XX XX XX XX" value={phone} onChange={(e) => setPhone(e.target.value)} data-testid="profile-phone" /></div>
-              <div className="field"><label htmlFor="p-country">Country</label>
-                <select id="p-country" value={country} onChange={(e) => setCountry(e.target.value)} data-testid="profile-country">
-                  {COUNTRIES.map((c) => <option key={c}>{c}</option>)}
-                </select>
-              </div>
-              {profileErr && <div className="err" data-testid="profile-error">{profileErr}</div>}
-              <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-                <button className="btn btn-sm" type="submit" data-testid="save-profile-button">Save changes</button>
-                <button className="btn btn-sm btn-ghost" type="button" onClick={resetProfile} data-testid="reset-profile-button">Reset</button>
-              </div>
-            </div>
-          </form>
-
-          <form className="profile-card" style={{ marginBottom: 20 }} onSubmit={changePassword} noValidate>
-            <div className="profile-card-head"><h3>Change password</h3></div>
-            <div className="profile-card-body">
-              <div className="field"><label htmlFor="p-curpwd">Current password</label><input type="password" id="p-curpwd" placeholder="••••••••" autoComplete="current-password" value={pwd.cur} onChange={(e) => setPwd({ ...pwd, cur: e.target.value })} data-testid="current-password" /></div>
-              <div className="field"><label htmlFor="p-newpwd">New password</label><input type="password" id="p-newpwd" placeholder="At least 6 characters" autoComplete="new-password" value={pwd.next} onChange={(e) => setPwd({ ...pwd, next: e.target.value })} data-testid="new-password" /></div>
-              <div className="field"><label htmlFor="p-confpwd">Confirm new password</label><input type="password" id="p-confpwd" placeholder="Repeat new password" autoComplete="new-password" value={pwd.confirm} onChange={(e) => setPwd({ ...pwd, confirm: e.target.value })} data-testid="confirm-password" /></div>
-              {pwdErr && <div className="err" data-testid="password-error">{pwdErr}</div>}
-              <button className="btn btn-sm" type="submit" data-testid="change-password-button">Update password</button>
-            </div>
-          </form>
-
-          <div className="danger-zone">
-            <h3>Danger zone</h3>
-            <div className="danger-row">
-              <div className="setting-info"><div className="setting-label">Clear all expenses</div><div className="setting-desc">Permanently delete all expense records</div></div>
-              <button className="btn-danger-outline" type="button" onClick={() => confirmThen('Clear all expenses? This cannot be undone.', z.clearExpenses)} data-testid="clear-expenses-button">Clear expenses</button>
-            </div>
-            <div className="danger-row">
-              <div className="setting-info"><div className="setting-label">Reset account data</div><div className="setting-desc">Reset balances and all transaction history</div></div>
-              <button className="btn-danger-outline" type="button" onClick={() => confirmThen('Reset all account data? This cannot be undone.', z.resetAccount)} data-testid="reset-account-button">Reset data</button>
-            </div>
-            <div className="danger-row">
-              <div className="setting-info"><div className="setting-label">Delete account</div><div className="setting-desc">Permanently delete your account and all data</div></div>
-              <button className="btn-danger-outline" type="button" onClick={() => confirmThen('Delete your account permanently? This cannot be undone.', () => { z.deleteAccount(); navigate('/app/login', { replace: true }); })} data-testid="delete-account-button">Delete account</button>
-            </div>
+          <Tabs tabs={TABS} value={tab} onChange={setTab} label="Settings sections" />
+          <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
+            {tab === 'profile' && <ProfileForm key={user.email + user.name} />}
+            {tab === 'security' && <SecurityForm />}
+            {tab === 'preferences' && <Preferences />}
+            {tab === 'account' && <AccountZone />}
           </div>
         </div>
       </div>

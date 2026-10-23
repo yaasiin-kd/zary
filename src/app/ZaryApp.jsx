@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppProvider, useZary } from './store.jsx';
+import '../styles/auth.css';
+import './ui/ui.css';
 import AuthLayout from './auth/AuthLayout.jsx';
 import Login from './auth/Login.jsx';
 import Register from './auth/Register.jsx';
@@ -27,7 +29,7 @@ function ZaryRoot() {
 
   useEffect(() => {
     document.title = 'Zary';
-    document.body.style.background = theme === 'dark' ? '#0d1117' : '#f6f8fa';
+    document.body.style.background = theme === 'dark' ? '#0b1220' : '#f4f6f1';
   }, [theme]);
 
   const home = user ? '/app/dashboard' : '/app/login';

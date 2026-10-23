@@ -7,7 +7,7 @@ Zary is a personal finance web app for tracking expenses, budgets and savings, w
 - React 18 with React Router
 - Vite for development and builds
 - three.js for the landing page hero scene
-- Plain CSS, scoped per area (`.lp` for the landing page, `.za` for the app)
+- Plain CSS with design tokens, scoped per area (`.lp` for the landing page, `.za` for the app)
 
 ## Project structure
 
@@ -26,6 +26,7 @@ zary/
     │   ├── sectionAnimations.js  Scroll-triggered animations
     │   └── guilloche.js       Engraved line patterns
     ├── app/
+    │   ├── ui/                Design system: tokens, components and icons
     │   ├── ZaryApp.jsx        App routes and guards
     │   ├── store.jsx          App state and actions
     │   ├── Shell.jsx          Sidebar, bottom nav, session timeout
@@ -57,11 +58,12 @@ App pages redirect to sign-in when nobody is signed in.
 - Sign up and sign in with a six-digit one-time code (with expiry, resend and paste support)
 - Three-step onboarding to set monthly budgets and currency
 - Dashboard with balance, income, expenses and savings rate
-- Expenses with categories, monthly recurring flag, search, filters, pagination and CSV export
+- Expenses with categories, monthly recurring flag, field-level validation, search, filters, pagination and CSV export
 - Undo for adding and removing expenses
-- Budget limits per category with warnings at 75%
-- Transfers between main and savings accounts
-- Profile and settings, dark and light mode, collapsible sidebar, mobile bottom navigation
+- Budget limits per category, editable in place, with warnings at 75%
+- Transfers in both directions between main and savings, with quick amounts
+- Settings in tabs (profile, security with password strength, preferences, account) with confirmation dialogs
+- Dark and light mode, collapsible sidebar that remembers its state, mobile bottom navigation
 - Automatic sign-out after 5 minutes of inactivity, with a one-minute warning
 
 ## Demo account

@@ -104,14 +104,22 @@ export function AppProvider({ children }) {
   function resetAccount() { resetData(); showToast('Account data reset'); }
   function deleteAccount() { if (user) delete users.current[user.email]; logout(); }
 
-  function transfer(amount, note) {
+  function transfer(amount, note, direction = 'toSavings') {
     const amt = parseFloat(amount);
     if (!amt || amt <= 0) return 'Enter a valid amount.';
-    if (amt > mainBal) return 'Insufficient balance in Main Account.';
-    setMainBal((b) => b - amt);
-    setSavBal((b) => b + amt);
-    setTransfers((p) => [...p, { id: Date.now(), note: note || 'Transfer', amount: amt, date: today() }]);
+    const toSavings = direction === 'toSavings';
+    if (amt > (toSavings ? mainBal : savBal)) return `Insufficient balance in ${toSavings ? 'Main' : 'Savings'} Account.`;
+    setMainBal((b) => (toSavings ? b - amt : b + amt));
+    setSavBal((b) => (toSavings ? b + amt : b - amt));
+    setTransfers((p) => [...p, { id: Date.now(), note: note || 'Transfer', amount: amt, direction, date: today() }]);
     showToast('Transfer successful');
+    return null;
+  }
+  function setBudgetLimit(cat, limit) {
+    const v = parseFloat(limit);
+    if (!v || v <= 0) return 'Enter a limit greater than 0.';
+    setBudgets((p) => p.map((b) => (b.cat === cat ? { ...b, limit: v } : b)));
+    showToast(`${cat} budget updated`);
     return null;
   }
 
@@ -143,7 +151,7 @@ export function AppProvider({ children }) {
     setCurrency, setTheme, toggleTheme, showToast, undoToast,
     login, register, finishAuth, logout,
     addExpense, deleteExpense, clearExpenses, resetAccount, deleteAccount,
-    transfer, saveProfile, changePassword,
+    transfer, setBudgetLimit, saveProfile, changePassword,
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
