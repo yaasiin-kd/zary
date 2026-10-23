@@ -18,7 +18,12 @@ jobs:
   e2e:
     name: ${{ matrix.name }}
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 20
+    # Official Playwright image with all browsers and their system libraries preinstalled.
+    # Keep the tag in sync with the @playwright/test version in package.json.
+    container:
+      image: mcr.microsoft.com/playwright:v1.49.1-noble
+      options: --user 1001
     strategy:
       fail-fast: false
       matrix:
@@ -26,11 +31,9 @@ jobs:
           - id: chromium
             name: Full suite (Chromium desktop and phone)
             projects: --project=chromium --project=mobile
-            browsers: chromium
           - id: other-browsers
             name: Smoke suite (Firefox and WebKit)
             projects: --project=firefox --project=webkit
-            browsers: firefox webkit
     steps:
       - uses: actions/checkout@v4
 
@@ -41,9 +44,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps ${{ matrix.browsers }}
 
       - name: Run Playwright tests
         run: npx playwright test ${{ matrix.projects }}
