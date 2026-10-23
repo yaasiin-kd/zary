@@ -1,5 +1,7 @@
+node_modules/
+dist/
+.vercel/
 .DS_Store
 Thumbs.db
-node_modules/
-.vercel/
 *.log
+.env*
