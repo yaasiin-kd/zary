@@ -15,7 +15,7 @@ Zary is a personal finance web app for tracking expenses, budgets and savings, w
 zary/
 ├── index.html                 Vite entry, favicon and fonts
 ├── public/                    Favicon and home-screen icon
-├── vercel.json                Rewrites so app routes work on refresh
+├── netlify.toml               Build settings and redirects for Netlify
 └── src/
     ├── main.jsx               App bootstrap
     ├── App.jsx                Top-level routes (landing and app, code-split)
@@ -87,14 +87,14 @@ npm run build     # production build in dist/
 npm run preview   # serve the production build locally
 ```
 
-## Deploy on Vercel
+## Deploy on Netlify
 
-1. On vercel.com, choose **Add New**, then **Project**
-2. Import the `zary` repository
-3. Vercel detects Vite automatically: build command `npm run build`, output directory `dist`
+1. On app.netlify.com, choose **Add new site**, then **Import an existing project**
+2. Connect GitHub and pick the `zary` repository
+3. Netlify reads `netlify.toml`: build command `npm run build`, publish directory `dist`, Node 20
 4. Click **Deploy**
 
-Every push to `main` deploys automatically. `vercel.json` makes sure routes like `/app/dashboard` load correctly on refresh.
+Every push to `main` deploys automatically. The redirect rule in `netlify.toml` makes sure routes like `/app/dashboard` load correctly on refresh.
 
 ## Testing
 
